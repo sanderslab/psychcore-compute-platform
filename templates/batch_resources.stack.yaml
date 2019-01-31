@@ -1,0 +1,202 @@
+# There are no repeated components, so I've pasted the entire section here
+
+# Need to pass in Batch parameters from the master template.
+
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: batch resources stack.
+Parameters:
+  GPCEName:
+    Type: String 
+  GPCEMaxVcpus:
+    Type: Number
+  GPCEMinVcpus:
+    Type: Number
+  GPCEDesiredVcpus:
+    Type: Number
+  GPCEVpcId:
+    Type: String
+  GPCESubnetAZ1:
+    Type: String
+  GPCEAmi:
+    Type: String
+  GPCEInstanceTypes:
+    Type: CommaDelimitedList
+  GPCESSHKeyPair:
+    Type: String
+  StackUID:
+    Type: String
+  StackName:
+    Type: String
+
+Resources:
+  BatchServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: batch.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole
+
+  BatchSpotIAMFleetServiceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: spotfleet.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2SpotFleetTaggingRole
+
+  IamInstanceProfile:
+    Type: "AWS::IAM::InstanceProfile"
+    Properties:
+      Roles:
+      - Ref: 'EcsInstanceRole'
+
+  EcsInstanceRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: ec2.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role
+
+  GeneralPurposeContainerRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+                - batch.amazonaws.com
+            Action:
+            - sts:AssumeRole
+      Path: '/'
+      Policies:
+        - PolicyName: ContainerBatchAccess
+          PolicyDocument:
+            Statement:
+            - Effect: Allow
+              Action:
+              - batch:SubmitJob
+              Resource:
+                "*"
+        - PolicyName: ContainerS3Access
+          PolicyDocument:
+            Statement:
+            - Effect: Allow
+              Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:DeleteObject
+              - s3:List*
+              Resource:
+              # TODO: This is massive violation of Principle of Least Privilage
+              # Only workaround can think of is taking user settings of input/output/ref buckets and building
+              # ARNs in place here. Or possibly processing the template in Python.
+              - arn:aws:s3:::*
+            - Effect: Allow
+              Action:
+              - s3:List*
+              - s3:ListMultipartUploadParts
+              - s3:AbortMultipartUpload
+              - s3:ListBucketMultipartUploads
+              Resource:
+              # TODO: This is massive violation of Principle of Least Privilage
+              # Only workaround can think of is taking user settings of input/output/ref buckets and building
+              # ARNs in place here. Or possibly processing the template in Python.
+              - arn:aws:s3:::*
+
+  GeneralPurposeComputeEnvironment:
+    Type: "AWS::Batch::ComputeEnvironment"
+    Properties:
+      Type: MANAGED
+      ComputeEnvironmentName: 
+        Fn::Join: ['-', [Ref: GPCEName, Ref: StackUID]]
+      ComputeResources:
+        MinvCpus:
+          Ref: GPCEMinVcpus
+        MaxvCpus:
+          Ref: GPCEMaxVcpus
+        DesiredvCpus:
+          Ref: GPCEDesiredVcpus
+        SecurityGroupIds:
+          - Fn::ImportValue:
+              Fn::Sub: '${StackUID}-SecurityGroup'
+        Subnets:
+          - Fn::ImportValue:
+              Fn::Sub: '${StackUID}-Subnet'
+        Type: 'SPOT'
+        BidPercentage: 60
+        SpotIamFleetRole:
+          Ref: BatchSpotIAMFleetServiceRole
+        ImageId:
+          Ref: GPCEAmi
+        InstanceRole:
+          Ref: IamInstanceProfile
+        InstanceTypes:
+          Ref: GPCEInstanceTypes
+        Ec2KeyPair:
+          Ref: GPCESSHKeyPair
+        Tags: 
+          - 
+            Key: Name
+            Value: ${StackName}
+      ServiceRole:
+        Ref: BatchServiceRole
+      State: ENABLED
+    DependsOn:
+      - IamInstanceProfile
+      - BatchServiceRole
+      - BatchSpotIAMFleetServiceRole
+
+  GeneralPurposeQueue:
+    Type: "AWS::Batch::JobQueue"
+    Properties:
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: 
+            Ref: GeneralPurposeComputeEnvironment
+      Priority: 10
+      State: ENABLED
+      JobQueueName:
+        Fn::Join: ['-', ["GeneralPurposeQueue", Ref: StackUID]]
+    DependsOn:
+      - GeneralPurposeComputeEnvironment
+      - BatchServiceRole
+
+  QCQueue:
+    Type: "AWS::Batch::JobQueue"
+    Properties:
+      ComputeEnvironmentOrder:
+        - Order: 1
+          ComputeEnvironment: 
+            Ref: GeneralPurposeComputeEnvironment
+      Priority: 5
+      State: ENABLED
+      JobQueueName:
+        Fn::Join: ['-', ["QCQueue", Ref: StackUID]]
+    DependsOn:
+      - GeneralPurposeComputeEnvironment
+      - BatchServiceRole
+
+
+# batch job defs added here #

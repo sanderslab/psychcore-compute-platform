@@ -1,0 +1,16 @@
+# Hidden files
+.*
+*.pyc
+__pycache__
+.idea
+sentieon-genomics*tar.gz
+run.yaml
+*.lic
+docker/**/SDK*
+
+# Don't ignore these files
+!/.gitignore
+!/.gitallowed
+!docker/SDK.sh
+!docker/SDK.py
+!examples/run.yaml

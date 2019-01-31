@@ -1,0 +1,34 @@
+{
+  "Type": "AWS::Batch::JobDefinition",
+  "Properties": {
+    "ContainerProperties": {
+      "Command": ["/home/SDK.sh", "${job}", "${job}"],
+      "Image": "${account}/${container}:dev",
+      "JobRoleArn": {"Ref": "GeneralPurposeContainerRole"},
+      "Memory": 0,
+      "MountPoints": [{
+        "ContainerPath": "/home/localDir/",
+        "ReadOnly": false,
+        "SourceVolume": "localDir"
+      }],
+      "Privileged": false,
+      "Ulimits": [{
+        "HardLimit":90000,
+        "SoftLimit":90000,
+        "Name": "nofile"
+      }],
+      "ReadonlyRootFilesystem": false,
+      "Vcpus": 0,
+      "Volumes": [
+        {"Host":
+        {"SourcePath": "/mnt/data/"},
+          "Name": "localDir"
+        }
+      ]
+    },
+    "JobDefinitionName": "${job_uid}Job",
+    "RetryStrategy": {"Attempts": 2},
+    "Type": "container"
+  },
+  "DependsOn": ["GeneralPurposeContainerRole"]
+}

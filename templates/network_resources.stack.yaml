@@ -1,0 +1,130 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: network resources stack.
+Parameters:
+  GPCESubnetAZ1:
+    Type: String
+  StackUID:
+    Type: String
+
+Resources:
+
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: 
+        Ref: 'VPC'
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: 
+        Ref: 'VPC'
+      InternetGatewayId: 
+        Ref: 'InternetGateway'
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: EC2 Security Group for instances launched in the VPC by Batch
+      VpcId: 
+        Ref: 'VPC'
+      # TODO: Add an ingress rule for port 22 from UCSF IP Block
+  StepFunctionsActivitiesInstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow http to client host
+      VpcId:
+        Ref: VPC
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: '22'
+        ToPort: '22'
+        CidrIp: 128.218.0.0/16
+
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      VpcId: 
+        Ref: 'VPC'
+      AvailabilityZone: 
+        Ref: GPCESubnetAZ1
+      MapPublicIpOnLaunch: 'True'
+    DependsOn: VPC
+
+  Route:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: 
+        Ref: 'RouteTable'
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: 
+        Ref: 'InternetGateway'
+    DependsOn:
+      - RouteTable
+      - InternetGateway
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: 
+        Ref: 'RouteTable'
+      SubnetId: 
+        Ref: 'Subnet'
+    DependsOn:
+      - RouteTable
+      - Subnet
+
+Outputs:
+  StackVPCID:
+    Value: 
+      Ref: VPC
+    Export:
+      Name: 
+        Fn::Sub: '${StackUID}-VPC'
+  StackInternetGateway:
+    Value:
+      Ref: InternetGateway
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-InternetGateway'
+  StackVPCGatewayAttachment:
+    Value:
+      Ref: VPCGatewayAttachment
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-VPCGatewayAttachment'
+  StackSubnet:
+    Value: 
+      Ref: Subnet
+    Export:
+      Name: 
+        Fn::Sub: '${StackUID}-Subnet'
+  StackSecurityGroup:
+    Value: 
+      Ref: SecurityGroup
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-SecurityGroup'
+  StackRoute:
+    Value: 
+      Ref: Route
+    Export:
+      Name: 
+        Fn::Sub: '${StackUID}-Route'
+  StackStepFunctionsActivitiesInstanceSecurityGroup:
+    Value: 
+      Ref: StepFunctionsActivitiesInstanceSecurityGroup
+    Export:
+      Name: 
+        Fn::Sub: '${StackUID}-StepFunctionsActivitiesInstanceSecurityGroup'
+  StackSubnetRouteTableAssociation:
+    Value:
+      Ref: SubnetRouteTableAssociation
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-SubnetRouteTableAssociation'

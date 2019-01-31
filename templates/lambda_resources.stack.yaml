@@ -1,0 +1,434 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: lambda function and execution role stack.
+Parameters:
+
+  # Needed to uniquely identify this stack's exports;
+  # can't use pseudo-param ${AWS::StackName} with nested stack exports
+  StackUID:
+    Type: String
+
+  #
+  # Lambda Polling function params
+  #
+
+  BatchPollerLambdaFuncS3BucketName:
+    Type: String
+  BatchPollerLambdaFuncS3KeyName:
+    Type: String
+  BatchPollerLambdaFuncModuleName:
+    Type: String
+
+  HandoffPollerLambdaFuncS3BucketName:
+    Type: String
+  HandoffPollerLambdaFuncS3KeyName:
+    Type: String
+  HandoffPollerLambdaFuncModuleName:
+    Type: String
+
+  CloudspanPollerLambdaFuncS3BucketName:
+    Type: String
+  CloudspanPollerLambdaFuncS3KeyName:
+    Type: String
+  CloudspanPollerLambdaFuncModuleName:
+    Type: String
+
+  #
+  # Lambda Task functions params
+  #
+
+
+  RemapLambdaFuncS3BucketName:
+    Type: String
+  RemapLambdaFuncS3KeyName:
+    Type: String
+  RemapLambdaFuncModuleName:
+    Type: String
+
+  AlignmentLambdaFuncS3BucketName:
+    Type: String
+  AlignmentLambdaFuncS3KeyName:
+    Type: String
+  AlignmentLambdaFuncModuleName:
+    Type: String
+
+  HaploLambdaFuncS3BucketName:
+    Type: String
+  HaploLambdaFuncS3KeyName:
+    Type: String
+  HaploLambdaFuncModuleName:
+    Type: String
+
+  GenoLambdaFuncS3BucketName:
+    Type: String
+  GenoLambdaFuncS3KeyName:
+    Type: String  
+  GenoLambdaFuncModuleName:
+    Type: String
+
+  VQSRLambdaFuncS3BucketName:
+    Type: String
+  VQSRLambdaFuncS3KeyName:
+    Type: String
+  VQSRLambdaFuncModuleName:
+    Type: String
+
+  TriodenovoLambdaFuncS3BucketName:
+    Type: String
+  TriodenovoLambdaFuncS3KeyName:
+    Type: String
+  TriodenovoLambdaFuncModuleName:
+    Type: String
+
+  HandoffLambdaFuncS3BucketName:
+    Type: String
+  HandoffLambdaFuncS3KeyName:
+    Type: String
+  HandoffLambdaFuncModuleName:
+    Type: String
+
+  CloudspanLambdaFuncS3BucketName:
+    Type: String
+  CloudspanLambdaFuncS3KeyName:
+    Type: String
+  CloudspanLambdaFuncModuleName:
+    Type: String
+
+
+Resources:
+
+  #
+  # Execution Role for Task and Poller Lambda functions (shared by all Tasks and the Poller)
+  #
+
+  BatchLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: CanReadS3
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:List*
+                Resource: arn:aws:s3:::*
+        - PolicyName: CanCallBatch
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "batch:*"
+                Resource: "*"
+        - PolicyName: CanLog
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - logs:*
+              Resource: arn:aws:logs:*:*:*
+
+  #
+  # Batch Poller Lambda function (shared by all Tasks)
+  #
+
+  BatchPollerLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: BatchPollerLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ BatchLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: BatchPollerLambdaFuncS3BucketName
+        S3Key:
+          Ref: BatchPollerLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "60"
+    DependsOn: BatchLambdaExecutionRole
+
+  #
+  # Poller Lambda functions for google cloud tasks
+  #
+
+
+  HandoffPollerLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: HandoffPollerLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ CloudspanLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: HandoffPollerLambdaFuncS3BucketName
+        S3Key:
+          Ref: HandoffPollerLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "60"
+    DependsOn: CloudspanLambdaExecutionRole
+
+  CloudspanPollerLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: CloudspanPollerLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ BatchLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: CloudspanPollerLambdaFuncS3BucketName
+        S3Key:
+          Ref: CloudspanPollerLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "60"
+    DependsOn: BatchLambdaExecutionRole
+
+
+  #
+  # Execution role for google cloud functions
+  #
+
+  CloudspanLambdaExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: "sts:AssumeRole"
+      Policies:
+        - PolicyName: CanListBuckets
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "s3:GetBucketLocation"
+                  - "s3:ListAllMyBuckets"
+                Resource: "arn:aws:s3:::*"
+        - PolicyName: CanLog
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - logs:*
+              Resource: arn:aws:logs:*:*:*
+
+
+  #
+  # Task Lambda functions [alignment, haplotyper, genotyper, vqsr]
+  #
+
+  RemapLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: RemapLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ BatchLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: RemapLambdaFuncS3BucketName
+        S3Key:
+          Ref: RemapLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "120"
+    DependsOn: BatchLambdaExecutionRole
+
+  AlignmentLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: AlignmentLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ BatchLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: AlignmentLambdaFuncS3BucketName
+        S3Key:
+          Ref: AlignmentLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "120"
+    DependsOn: BatchLambdaExecutionRole
+
+  HaploLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: HaploLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ BatchLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: HaploLambdaFuncS3BucketName
+        S3Key:
+          Ref: HaploLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "60"
+    DependsOn: BatchLambdaExecutionRole
+
+  GenoLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: GenoLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ BatchLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: GenoLambdaFuncS3BucketName
+        S3Key:
+          Ref: GenoLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "60"
+    DependsOn: BatchLambdaExecutionRole
+
+  VQSRLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: VQSRLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ BatchLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: VQSRLambdaFuncS3BucketName
+        S3Key:
+          Ref: VQSRLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "60"
+    DependsOn: BatchLambdaExecutionRole
+
+
+  TriodenovoLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: TriodenovoLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ BatchLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: TriodenovoLambdaFuncS3BucketName
+        S3Key:
+          Ref: TriodenovoLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "60"
+    DependsOn: BatchLambdaExecutionRole
+
+  HandoffLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: HandoffLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ BatchLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: HandoffLambdaFuncS3BucketName
+        S3Key:
+          Ref: HandoffLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "60"
+    DependsOn: BatchLambdaExecutionRole
+
+
+  CloudspanLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler:
+        Fn::Join: [ ".", [ Ref: CloudspanLambdaFuncModuleName, "handler"] ]
+      Role:
+        Fn::GetAtt: [ BatchLambdaExecutionRole, Arn ]
+      Code:
+        S3Bucket:
+          Ref: CloudspanLambdaFuncS3BucketName
+        S3Key:
+          Ref: CloudspanLambdaFuncS3KeyName
+      Runtime: "python3.6"
+      Timeout: "60"
+    DependsOn: BatchLambdaExecutionRole
+
+Outputs:
+  StackBatchPollerLambdaFunction:
+    Value:
+      Fn::GetAtt: [ BatchPollerLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-BatchPollerLambdaFunction'
+  StackRemapLambdaFunction:
+    Value:
+      Fn::GetAtt: [ RemapLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-RemapLambdaFunction'
+  StackAlignmentLambdaFunction:
+    Value:
+      Fn::GetAtt: [ AlignmentLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-AlignmentLambdaFunction'
+  StackHaplotyperLambdaFunction:
+    Value:
+      Fn::GetAtt: [ HaploLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-HaploLambdaFunction'
+  StackGenoLambdaFunction:
+    Value:
+      Fn::GetAtt: [ GenoLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-GenoLambdaFunction'
+  StackVQSRLambdaFunction:
+    Value:
+      Fn::GetAtt: [ VQSRLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-VQSRLambdaFunction'
+  StackTriodenovoLambdaFunction:
+    Value:
+      Fn::GetAtt: [ TriodenovoLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-TriodenovoLambdaFunction'
+  StackHandoffLambdaFunction:
+    Value:
+      Fn::GetAtt: [ HandoffLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-HandoffLambdaFunction'
+  StackCloudspanLambdaFunction:
+    Value:
+      Fn::GetAtt: [ CloudspanLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-CloudspanLambdaFunction'
+  StackHandoffPollerLambdaFunction:
+    Value:
+      Fn::GetAtt: [ HandoffPollerLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-HandoffPollerLambdaFunction'
+  StackCloudspanPollerLambdaFunction:
+    Value:
+      Fn::GetAtt: [ CloudspanPollerLambdaFunction, 'Arn' ]
+    Export:
+      Name:
+        Fn::Sub: '${StackUID}-CloudspanPollerLambdaFunction'
+  

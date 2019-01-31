@@ -1,0 +1,14 @@
+---
+lambda:
+  handlers:
+    - alignment_polling.py
+    - alignment_processing.py
+    - cloudspan.py
+    - cloudspan_polling.py
+    - handoff.py
+    - handoff_poller.py
+    - sam_to_fq.py
+    - sentieon_genotyper.py
+    - sentieon_haplotyper.py
+    - triodenovo.py
+    - vqsr.py

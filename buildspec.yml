@@ -1,0 +1,116 @@
+version: 0.2
+
+env:
+  variables:
+    OUTPUT_FILE: "QA_Pipeline_Digest.txt"
+
+phases:
+  install:
+    commands:
+      - echo Entered the install phase...
+      - pwd
+      - ls -alh
+      - apt-get update -y
+      - apt-get install -y tree
+      - apt-get install -y git
+      - apt-get install -y jq
+      - pip install bandit
+      - pip install vulture
+      - pip install flake8
+      - pip install --upgrade pycodestyle
+      - pip install --upgrade boto3
+      - pip install awscli --upgrade --user
+  pre_build:
+    commands:
+      #
+      # 1. Print location and tree, dependecy versions
+      #
+      - echo "Entered the pre_build phase..."
+      - pwd
+      - tree
+      - echo "Testing the AWS CLI..."
+      - "aws --version"
+      - echo "Testing the jq version..."
+      - "jq --version"
+      #
+      # 2. Get literal secrets out of AWS Secrets Manager. Store in file "secrets".
+      #
+      - "aws secretsmanager list-secrets"
+      - cd build
+      - ./decrypt-and-store-secrets.sh ../../secrets "/psychcore/pipeline/secrets/"
+      - cat ../../secrets
+      - cd -
+      #
+      # 3. Write git credentials to ~/.netrc from env vars, for git HTTPS auth.
+      #
+      - echo "The environment variables"
+      - printenv
+      #   Write a .netrc file with HTTPS login hostname/git-credentials for CodeCommit repo.
+      #   The git credentials and CodeCommit clone URL hostname are passed in as environment variables.
+      #   This is used to authenticate (without a username/password prompt) and clone the repo with whole history.
+      #   As of now, 1-11-2019, CodePipeline and CodeBuild no longer support gitCloneDepth, and only clone the latest
+      #   commit. This is a work-around.
+      #
+      - echo "Writing to creds file..."
+      - "echo machine $CODE_COMMIT_GIT_HTTPS_HOST'\nlogin '$CODE_COMMIT_GIT_USERNAME'\npassword '$CODE_COMMIT_GIT_PASSWORD > ~/.netrc"
+      - "[ -e ~/.netrc ]"
+      - "cat ~/.netrc"
+      #
+      # 4. Clone and install Git Secrets AWS provider, in order to scan repo for credentials.
+      #
+      - cd ..
+      - git clone https://github.com/awslabs/git-secrets.git
+      - cd git-secrets
+      - make install
+      - cd ../src
+      #
+      # 5. Clone the source repo to full history depth. Register the AWS provider, add secrets literals, scan it
+      #
+      - cd ..
+      - git clone ${CODE_COMMIT_CLONE_URL} repo_full_depth
+      - cd repo_full_depth
+      - git config -l
+      - git secrets --register-aws
+      - git secrets --list
+      - cd build
+      - ./add_literal_secrets.sh ../../secrets
+      - git config -l
+      - git secrets --list
+      - cd ..
+      - git secrets --scan-history
+      - cd ../src
+      #
+      # 6. Bandit Security Scan. Skip test for subprocess module import.
+      #
+      # - bandit -r -s B404,B603,B108 .
+      - ./build/bandit_build_scan.sh
+      #
+      # 7. Vulture Code Quality Scan
+      #
+      #- vulture . --exclude "docs/,docker/" --ignore-names "Or,And,Not"
+      #- ./build/vulture_build_scan.sh
+      #
+      # 8. Flake8 Static Code Analysis
+      #
+      #- ./build/flake8_build_scan.sh
+  build:
+    commands:
+      - echo Entered the build phase...
+      - pwd
+      - ls -alh
+      - tree
+      - echo Build started on `date`
+      - echo foo > $OUTPUT_FILE
+      - tree
+  post_build:
+    commands:
+      - echo Entered the post_build phase...
+      - pwd
+      - ls -alh
+      - tree
+      - echo Build completed on `date`
+artifacts:
+  files:
+    - $OUTPUT_FILE
+  discard-paths: yes
+

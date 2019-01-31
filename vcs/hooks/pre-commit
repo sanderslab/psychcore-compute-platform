@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+if ! git secrets --list | grep "secrets.providers git secrets --aws-provider"; then
+    cat <<\EOF
+Did not find the AWS secrets provider in "git secrets --list."
+
+The provider can be cloned from https://github.com/awslabs/git-secrets.git, and installed with make.
+
+Once installed, try running the following in the current directory
+
+    git secrets --register-aws
+
+before pushing again.
+EOF
+    exit 1
+fi
+
+git secrets --scan

@@ -1,0 +1,80 @@
+dataproc_create: 
+  gcp-administrative: 
+    project: 
+    zone: 
+    credentials: 
+  dataproc-administrative: 
+    cluster_name: 
+    image_version: 
+    masterConfig: 
+     master_type: "n1-highmem-8"
+     num_masters: 1
+     boot_disk_size: 100
+     num_local_ssds: 0
+    workerConfig: 
+     worker_type: "n1-standard-4"
+     num_workers: 10
+     boot_disk_size: 40
+     num_local_ssds: 0
+    preemptConfig: 
+     preempt_type: "n1-standard-4"
+     num_preempt: 20
+     boot_disk_size: 40
+     num_local_ssds: 0
+  hail-administrative: 
+   script: 
+     gs_bucket: 
+     gs_key: 
+   metadata: 
+     HASH: 
+     SPARK: 
+     HAIL_VERSION: 
+     MINICONDA_VERSION:
+     MINICONDA_VARIANT: 
+     JAR: "gs://hail-common/builds/{hail_version}/jars/hail-{hail_version}-{hail_hash}-Spark-{spark_version}.jar"
+     ZIP: "hail-{hail_version}-{hail_hash}.zip"
+
+dataproc_submit: 
+  gcp-administrative: 
+    project: 
+    zone: 
+    credentials: 
+  dataproc-administrative: 
+    cluster_name: 
+    image_version: 
+    masterConfig: 
+     master_type: "n1-standard-8"
+     num_masters: 1
+     boot_disk_size: 100
+     num_local_ssds: 0
+    workerConfig: 
+     worker_type: "n1-standard-4"
+     num_workers: 10
+     boot_disk_size: 40
+     num_local_ssds: 0
+    preemptConfig: 
+     preempt_type: "n1-standard-4"
+     num_preempt: 20
+     boot_disk_size: 40
+     num_local_ssds: 0
+  hail-administrative: 
+   script: 
+     gs_bucket: hail_script_bucket
+     gs_key: validation_script_key
+   metadata: 
+     HASH: 
+     SPARK: 
+     HAIL_VERSION: 
+     MINICONDA_VERSION: 
+     MINICONDA_VARIANT: 
+     JAR: "gs://hail-common/builds/{hail_version}/jars/hail-{hail_version}-{hail_hash}-Spark-{spark_version}.jar"
+     ZIP: "hail-{hail_version}-{hail_hash}.zip"
+
+dataproc_delete:
+  gcp-administrative: 
+    project: 
+    zone: 
+    credentials: 
+  dataproc-administrative: 
+    cluster_name: 
+

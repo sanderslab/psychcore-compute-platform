@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+
+FLAKE8_IGNORES=(
+    E501
+    E203
+    F405
+    E265
+    E702
+    E122
+    E123
+    E125
+    E126
+    E128
+    E211
+    E226
+    E231
+    E261
+    E303
+    E305
+    E306
+    E701
+    E704
+    E711
+    E713
+    E722
+    F403
+    W291
+    W292
+    W293
+    W391
+    W504
+)
+
+function check_dependencies() {
+
+    if ! command -v bandit; then
+        echo "Could not find bandit. Please install."
+        exit 1
+    fi
+
+    if ! command -v vulture; then
+        echo "Could not find vulture. Please install."
+        exit 1
+    fi
+
+    if ! command -v flake8; then
+        echo "Could not find flake8. Please install."
+        exit 1
+    fi
+
+}
+
+function quality_scan() {
+
+    if ! bandit -r -s B404 .; then
+        echo "Bandit failed. Aborting commit."
+        exit 2
+    fi
+
+    if ! vulture . --exclude "docs/" --ignore-names "Or,And,Not"; then
+        echo "Vulture failed. Aborting commit."
+        exit 3
+    fi
+
+    FLAKE8_IGNORE_ARG=`printf '%s,' "${FLAKE8_IGNORES[@]}"`
+
+    if ! flake8 --ignore "$FLAKE8_IGNORE_ARG"; then
+        echo "Flake8 failed. Aborting commit."
+        exit 4
+    fi
+
+}
+
+function security_scan() {
+    if ! git secrets --list | grep "secrets.providers git secrets --aws-provider"; then
+        cat <<\EOF
+    Did not find the AWS secrets provider in "git secrets --list."
+
+    The provider can be cloned from https://github.com/awslabs/git-secrets.git, and installed with make.
+
+    Once installed, try running the following in the current directory
+
+        git secrets --register-aws
+
+    before pushing again.
+EOF
+        exit 1
+    fi
+
+    git secrets --scan-history || exit 1
+}
+
+check_dependencies
+quality_scan
+security_scan
+

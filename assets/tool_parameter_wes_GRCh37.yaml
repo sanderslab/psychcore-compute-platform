@@ -1,0 +1,177 @@
+sam_to_fq: >
+  java -Xmx50g -Djava.io.tmpdir={tmp_dir}
+  -jar /home/picard/build/libs/picard.jar SamToFastq
+  I={bam}
+  FASTQ={R1}
+  SECOND_END_FASTQ={R2}
+bwa_mem: >
+  bwa mem -R {header} human_g1k_v37.fasta {R1} {R2} -M -t {threads}
+sort_sam: >
+  java -Xmx50g -Djava.io.tmpdir={tmp_dir}
+  -jar /home/picard/build/libs/picard.jar SortSam
+  I={sam}
+  O={output}
+  SORT_ORDER=coordinate
+mark_dups: >
+ java -Xmx50g -Djava.io.tmpdir={tmp_dir}
+ -jar /home/picard/build/libs/picard.jar MarkDuplicates
+ I={bam}
+ O={output}
+ M=mark_dupes_{prefix}.metrics.txt
+index_bam: >
+ java -Xmx32g -Djava.io.tmpdir={tmp_dir}
+ -jar /home/picard/build/libs/picard.jar BuildBamIndex
+ I={bam}
+ O={output}
+base_recal_table: >
+ java -Xmx105g -Djava.io.tmpdir={tmp_dir}
+ -jar /usr/GenomeAnalysisTK.jar
+ -T BaseRecalibrator
+ -I {bam}
+ -o {output}
+ -R human_g1k_v37.fasta
+ -nct {threads}
+ -L {target}
+ -knownSites Mills_and_1000G_gold_standard.indels.b37.vcf
+ -knownSites dbsnp_138.b37.vcf
+ --disable_auto_index_creation_and_locking_when_reading_rods
+base_recal: >
+   java
+   -Xmx105g
+   -Djava.io.tmpdir={tmp_dir}
+   -jar /usr/GenomeAnalysisTK.jar
+   -T PrintReads
+   -I {bam}
+   -BQSR {bqsr}
+   -o {output}
+   -R human_g1k_v37.fasta
+   -nct 8
+   -SQQ 10
+   -SQQ 20
+   -SQQ 30
+   --disable_indel_quals
+   --disable_auto_index_creation_and_locking_when_reading_rods
+haplotyper: >
+  sentieon driver
+  -r human_g1k_v37.fasta
+  -t {threads}
+  -i {bam}
+  --interval {target}
+  --algo Haplotyper
+  -d dbsnp_138.b37.vcf
+  --emit_conf=30
+  --call_conf=30
+  --emit_mode gvcf
+  {output}
+genotyper: >
+  sentieon driver
+  -r human_g1k_v37.fasta
+  --interval {target}
+  --algo GVCFtyper
+  -d dbsnp_138.b37.vcf
+  --annotation !MQ0
+  {output}
+sentieon_zipper: >
+ sentieon
+ util
+ vcfconvert
+ {output}
+ {output_gz}
+vqsr_snp_model: >
+  java
+  -Xmx118g
+  -Djava.io.tmpdir={tmp_dir}
+  -jar /usr/GenomeAnalysisTK.jar
+  -T VariantRecalibrator
+  -mode SNP
+  -input {vcf}
+  -recalFile {recal_file}
+  -tranchesFile {tranches_file}
+  -rscriptFile {rscript_file}
+  -R human_g1k_v37.fasta
+  -nt 36
+  --use_annotation QD
+  --use_annotation MQ
+  --use_annotation MQRankSum
+  --use_annotation FS
+  --use_annotation SOR
+  --resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.b37.vcf
+  --resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.b37.vcf
+  --resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.b37.vcf
+  --resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf
+vqsr_snp_apply: >
+  java
+  -Xmx118g
+  -Djava.io.tmpdir={tmp_dir}
+  -jar /usr/GenomeAnalysisTK.jar
+  -T ApplyRecalibration
+  -mode SNP
+  -input {vcf}
+  -recalFile {recal_file}
+  -tranchesFile {tranches_file}
+  -o {output}
+  -R human_g1k_v37.fasta
+  --ts_filter_level 99.5
+  --disable_auto_index_creation_and_locking_when_reading_rods
+vqsr_indel_model: >
+  java
+  -Xmx118g
+  -Djava.io.tmpdir={tmp_dir}
+  -jar /usr/GenomeAnalysisTK.jar
+  -T VariantRecalibrator
+  -mode INDEL
+  -input {vcf}
+  -recalFile {recal_file}
+  -tranchesFile {tranches_file}
+  -rscriptFile {rscript_file}
+  -R human_g1k_v37.fasta
+  -nt 36
+  --maxGaussians 4
+  -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.b37.vcf
+  -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf
+  --use_annotation QD
+  --use_annotation MQ
+  --use_annotation MQRankSum
+  --use_annotation FS
+  --use_annotation SOR
+  --use_annotation ReadPosRankSum
+vqsr_indel_apply: >
+  java
+  -Xmx118g
+  -Djava.io.tmpdir={tmp_dir}
+  -jar /usr/GenomeAnalysisTK.jar
+  -T ApplyRecalibration
+  -mode INDEL
+  -input {vcf}
+  -recalFile {recal_file}
+  -tranchesFile {tranches_file}
+  -o {output}
+  -R human_g1k_v37.fasta
+  --ts_filter_level 90.0
+  --disable_auto_index_creation_and_locking_when_reading_rods
+fam_vcf_from_cohort: >
+  java 
+  -Xmx64g
+  -Djava.io.tmpdir={tmp_dir}
+  -jar /usr/GenomeAnalysisTK.jar
+  -T SelectVariants \
+  -R human_g1k_v37.fasta \
+  -V {vcf} \
+  -o {fam_id}.vcf \
+  -sn {fil} \
+  -sn {pat} \
+  -sn {mat}
+scrub_vcf: >
+  python InputAdapters.py 
+  -i {vcf}
+  -o {fam_id}.scrubbed.vcf
+ped_from_vcf: >
+  python ped_from_vcf_main.py {vcf} > {fam_id}.ped
+triodenovo: >
+  triodenovo 
+  --ped {fam_id}.ped
+  --in_vcf {fam_id}.vcf
+  --out_vcf {fam_id}.triodenovo.vcf
+  --minDepth 10
+  --chrX X
+  --mixed_vcf_records

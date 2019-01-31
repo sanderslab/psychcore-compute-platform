@@ -1,0 +1,249 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Master template for wgs-pipeline. Calls to other stack templates."
+Parameters:
+  AlignmentLambdaFuncS3BucketName:
+    Type: String
+  AlignmentLambdaFuncS3KeyName:
+    Type: String
+  AlignmentLambdaFuncModuleName:
+    Type: String
+  RemapLambdaFuncS3BucketName:
+    Type: String
+  RemapLambdaFuncS3KeyName:
+    Type: String
+  RemapLambdaFuncModuleName:
+    Type: String
+  HaploLambdaFuncS3BucketName:
+    Type: String
+  HaploLambdaFuncS3KeyName:
+    Type: String
+  HaploLambdaFuncModuleName:
+    Type: String
+  GenoLambdaFuncS3BucketName:
+    Type: String
+  GenoLambdaFuncS3KeyName:
+    Type: String  
+  GenoLambdaFuncModuleName:
+    Type: String
+  VQSRLambdaFuncS3BucketName:
+    Type: String
+  VQSRLambdaFuncS3KeyName:
+    Type: String
+  VQSRLambdaFuncModuleName:
+    Type: String
+  TriodenovoLambdaFuncS3BucketName:
+    Type: String
+  TriodenovoLambdaFuncS3KeyName:
+    Type: String
+  TriodenovoLambdaFuncModuleName:
+    Type: String
+  HandoffLambdaFuncS3BucketName:
+    Type: String
+  HandoffLambdaFuncS3KeyName:
+    Type: String
+  HandoffLambdaFuncModuleName:
+    Type: String
+  CloudspanLambdaFuncS3BucketName:
+    Type: String
+  CloudspanLambdaFuncS3KeyName:
+    Type: String
+  CloudspanLambdaFuncModuleName:
+    Type: String
+  HandoffPollerLambdaFuncS3BucketName:
+    Type: String
+  HandoffPollerLambdaFuncS3KeyName:
+    Type: String
+  HandoffPollerLambdaFuncModuleName:
+    Type: String
+  CloudspanPollerLambdaFuncS3BucketName:
+    Type: String
+  CloudspanPollerLambdaFuncS3KeyName:
+    Type: String
+  CloudspanPollerLambdaFuncModuleName:
+    Type: String
+  BatchPollerLambdaFuncS3BucketName:
+    Type: String
+  BatchPollerLambdaFuncS3KeyName:
+    Type: String
+  BatchPollerLambdaFuncModuleName:
+    Type: String
+  Rkstr8PkgBucketName:
+    Type: String
+  Rkstr8PkgKeyName:
+    Type: String
+  GPCEName:
+    Default: 'GeneralPurposeVariantCallingCE'
+    Type: String
+  GPCEMaxVcpus:
+    Default: 128
+    Type: Number
+    Description: Max number of VCPUs for entire cluster, there are caveats to this
+  GPCEMinVcpus:
+    Default: 0
+    Type: Number
+    Description: Min number of VCPUs for entire cluster, there are caveats to this
+  GPCEDesiredVcpus:
+    Default: 0
+    Type: Number
+    Description: Desired number of VCPUs for entire cluster, there are caveats to this
+  GPCEVpcId:
+    Type: String
+  GPCESubnetAZ1:
+    Default: 'us-east-1a'
+    Type: String
+  GPCEAmi:
+    Default: "ami-7f474800"
+    Type: String
+  GPCEInstanceTypes:
+    Default: "r4.xlarge, c5.2xlarge, c5.18xlarge"
+    Type: String
+  GPCESSHKeyPair:
+    Type: String
+  StackUID:
+    Type: String
+  StackName:
+    Type: String
+  NetworkTemplateURL:
+    Type: String
+  LambdaTemplateURL:
+    Type: String
+  StepFunctionsTemplateURL:
+    Type: String
+  BatchTemplateURL:
+    Type: String
+
+Resources:
+
+# Pass down the Stack UID to all the child stacks that will be exporting/importing values.
+
+  NetworkResourcesStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      Parameters:
+        GPCESubnetAZ1: 
+          Ref: GPCESubnetAZ1
+        StackUID:
+          Ref: StackUID 
+      TemplateURL: 
+        Ref: NetworkTemplateURL
+      TimeoutInMinutes: 10
+
+  LambdaResourcesStack:
+    Type: "AWS::CloudFormation::Stack"
+    Properties:
+      Parameters:
+        StackUID:
+          Ref: StackUID
+        BatchPollerLambdaFuncS3BucketName:
+          Ref: BatchPollerLambdaFuncS3BucketName
+        BatchPollerLambdaFuncS3KeyName:
+          Ref: BatchPollerLambdaFuncS3KeyName
+        BatchPollerLambdaFuncModuleName:
+          Ref: BatchPollerLambdaFuncModuleName
+        RemapLambdaFuncS3BucketName:
+          Ref: RemapLambdaFuncS3BucketName 
+        RemapLambdaFuncS3KeyName:
+          Ref: RemapLambdaFuncS3KeyName 
+        RemapLambdaFuncModuleName:
+          Ref: RemapLambdaFuncModuleName 
+        AlignmentLambdaFuncS3BucketName:
+          Ref: AlignmentLambdaFuncS3BucketName 
+        AlignmentLambdaFuncS3KeyName:
+          Ref: AlignmentLambdaFuncS3KeyName 
+        AlignmentLambdaFuncModuleName:
+          Ref: AlignmentLambdaFuncModuleName 
+        HaploLambdaFuncS3BucketName:
+          Ref: HaploLambdaFuncS3BucketName 
+        HaploLambdaFuncS3KeyName:
+          Ref: HaploLambdaFuncS3KeyName 
+        HaploLambdaFuncModuleName:
+          Ref: HaploLambdaFuncModuleName 
+        GenoLambdaFuncS3BucketName:
+          Ref: GenoLambdaFuncS3BucketName 
+        GenoLambdaFuncS3KeyName:
+          Ref: GenoLambdaFuncS3KeyName 
+        GenoLambdaFuncModuleName:
+          Ref: GenoLambdaFuncModuleName 
+        VQSRLambdaFuncS3BucketName:
+          Ref: VQSRLambdaFuncS3BucketName 
+        VQSRLambdaFuncS3KeyName:
+          Ref: VQSRLambdaFuncS3KeyName 
+        VQSRLambdaFuncModuleName:
+          Ref: VQSRLambdaFuncModuleName
+        TriodenovoLambdaFuncS3BucketName:
+          Ref: TriodenovoLambdaFuncS3BucketName 
+        TriodenovoLambdaFuncS3KeyName:
+          Ref: TriodenovoLambdaFuncS3KeyName 
+        TriodenovoLambdaFuncModuleName:
+          Ref: TriodenovoLambdaFuncModuleName 
+        HandoffLambdaFuncS3BucketName:
+          Ref: HandoffLambdaFuncS3BucketName
+        HandoffLambdaFuncS3KeyName:
+          Ref: HandoffLambdaFuncS3KeyName
+        HandoffLambdaFuncModuleName:
+          Ref: HandoffLambdaFuncModuleName
+        CloudspanLambdaFuncS3BucketName:
+          Ref: CloudspanLambdaFuncS3BucketName
+        CloudspanLambdaFuncS3KeyName:
+          Ref: CloudspanLambdaFuncS3KeyName
+        CloudspanLambdaFuncModuleName:
+          Ref: CloudspanLambdaFuncModuleName
+        HandoffPollerLambdaFuncS3BucketName:
+          Ref: HandoffPollerLambdaFuncS3BucketName
+        HandoffPollerLambdaFuncS3KeyName:
+          Ref: HandoffPollerLambdaFuncS3KeyName
+        HandoffPollerLambdaFuncModuleName:
+          Ref: HandoffPollerLambdaFuncModuleName
+        CloudspanPollerLambdaFuncS3BucketName:
+          Ref: CloudspanPollerLambdaFuncS3BucketName
+        CloudspanPollerLambdaFuncS3KeyName:
+          Ref: CloudspanPollerLambdaFuncS3KeyName
+        CloudspanPollerLambdaFuncModuleName:
+          Ref: CloudspanPollerLambdaFuncModuleName
+      TemplateURL: 
+        Ref: LambdaTemplateURL
+      TimeoutInMinutes: 10
+
+  StepFunctionResourcesStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        StackUID: 
+          Ref: StackUID
+      TemplateURL: 
+        Ref: StepFunctionsTemplateURL
+      TimeoutInMinutes: 10
+    DependsOn: LambdaResourcesStack
+
+  BatchResourcesStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        GPCEName: 
+          Ref: GPCEName
+        GPCEMaxVcpus: 
+          Ref: GPCEMaxVcpus
+        GPCEMinVcpus: 
+          Ref: GPCEMinVcpus
+        GPCEDesiredVcpus: 
+          Ref: GPCEDesiredVcpus
+        GPCEVpcId: 
+          Ref: GPCEVpcId
+        GPCESubnetAZ1: 
+          Ref: GPCESubnetAZ1 
+        GPCEAmi: 
+          Ref: GPCEAmi
+        GPCEInstanceTypes: 
+          Ref: GPCEInstanceTypes
+        GPCESSHKeyPair: 
+          Ref: GPCESSHKeyPair
+        StackUID: 
+          Ref: StackUID
+        StackName:
+          Ref: StackName
+      TemplateURL: 
+        Ref: BatchTemplateURL 
+      TimeoutInMinutes: 10
+    DependsOn:
+      - NetworkResourcesStack

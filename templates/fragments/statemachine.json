@@ -1,0 +1,8 @@
+{
+  "Type": "AWS::StepFunctions::StateMachine",
+  "Properties": {
+    "DefinitionString": { "Fn::Sub": [] },
+    "RoleArn": { "Fn::GetAtt": [ "StatesExecutionRole", "Arn" ] }
+  },
+  "DependsOn": "StatesExecutionRole"
+}
