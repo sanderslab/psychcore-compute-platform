@@ -46,6 +46,8 @@ if, for example, ``OUTPUT`` was set to ``s3://analysis/results/``:
 			PRE logs/
 			PRE processed-bams/
 
+.. image:: PipelineworkflowS3.jpg
+
 The figure below illustrates what files are written under which of the above
 prefixes.  Note that the ``PRE bam-qc/`` prefix only appears if the user has
 listed ``BAM`` for the ``QC`` parameter in ``run.yaml``.

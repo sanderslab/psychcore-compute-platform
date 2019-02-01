@@ -4,7 +4,10 @@
 
 **PsychCore Compute Platform** is a cloud-based computing platform that supports diverse NGS data analyses, large and small.  Through the implementation of *pipelines*, users create or customize a bioinformatic analysis that runs on the cloud *platform*.  A core design philosophy of the project is enabling the community to create arbitrary data analysis pipelines that address central or ad-hoc research inquiries.  To seed this effort, we provide a whole-genome/whole-exome variant calling pipeline that is high-throughput, low-cost, and calls variants with a genotype concordance of 99.96% (on the [PrecessionFDA Truth Challenge](https://precision.fda.gov/challenges/truth) dataset).  The team is actively working on additional *-omics* pipelines, such as RNASeq, ChIPSeq, CWAS, and more.  As well as constantly improving the platform and its user-facing API.
 
-![Documentation Status](https://readthedocs.org/projects/psychcore-ngs-pipeline/badge/?version=latest)
+
+Full project documentation can be found on [ReadTheDocs](https://psychcore-ngs-pipeline.readthedocs.io/en/latest/).
+
+[![Documentation Status](https://readthedocs.org/projects/psychcore-ngs-pipeline/badge/?version=latest)](https://psychcore-ngs-pipeline.readthedocs.io/en/latest/?badge=latest)
 ![Build Status](https://codebuild.us-east-1.amazonaws.com/badges?uuid=eyJlbmNyeXB0ZWREYXRhIjoiSGJVdjVzckFkVnlsWkZGdFVCTElvN08vMmMrRVU1TStsVmdsdk1Hc0NvYXh1Z1EvL3crVkUvbm9GZzJ3ZHhkclNOYXhBUnFBM0I3VjM4Qk95Wlk3ZDBVPSIsIml2UGFyYW1ldGVyU3BlYyI6ImtWWmNBTVU1Sk5pUnIvN2QiLCJtYXRlcmlhbFNldFNlcmlhbCI6MX0%3D&branch=master)
 
 ## Features
@@ -24,7 +27,7 @@
 
 ## Quick Start
 
-First check the pre-requisites<sup>&#8224;</sup> below for preparing your AWS Account and local machine to run a pipeline.
+First check the pre-requisites<sup>&#8224;</sup> below for preparing your AWS Account and local machine to run a pipeline.  Detailed instructions can be found in our [full documentation](https://psychcore-ngs-pipeline.readthedocs.io/en/latest/).
 
 ### Running the example pipeline
 
