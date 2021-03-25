@@ -64,4 +64,4 @@ six==1.11.0
 tenacity==4.4.0
 urllib3==1.22
 uritemplate==3.0.0
-PyYAML==3.12
+PyYAML==5.4
