@@ -1,8 +1,6 @@
-# PsychCore Compute Platform #
-
 ![PSP](https://github.com/sanderslab/psychcore-compute-platform/blob/master/psp.svg)
 
-**PsychCore Compute Platform** is a cloud-based computing platform that supports diverse NGS data analyses, large and small.  Through the implementation of *pipelines*, users create or customize a bioinformatic analysis that runs on the cloud *platform*.  A core design philosophy of the project is enabling the community to create arbitrary data analysis pipelines that address central or ad-hoc research inquiries.  To seed this effort, we provide a whole-genome/whole-exome variant calling pipeline that is high-throughput, low-cost, and calls variants with a genotype concordance of 99.96% (on the [PrecessionFDA Truth Challenge](https://precision.fda.gov/challenges/truth) dataset).  The team is actively working on additional *-omics* pipelines, such as RNASeq, ChIPSeq, CWAS, and more.  As well as constantly improving the platform and its user-facing API.
+**PsychCore Systems Platform** is a cloud-based computing platform that supports diverse NGS data analyses, large and small.  Through the implementation of *pipelines*, users create or customize a bioinformatic analysis that runs on the cloud *platform*.  A core design philosophy of the project is enabling the community to create arbitrary data analysis pipelines that address central or ad-hoc research inquiries.  To seed this effort, we provide a whole-genome/whole-exome variant calling pipeline that is high-throughput, low-cost, and calls variants with a genotype concordance of 99.96% (on the [PrecessionFDA Truth Challenge](https://precision.fda.gov/challenges/truth) dataset).  The team is actively working on additional *-omics* pipelines, such as RNASeq, ChIPSeq, CWAS, and more.  As well as constantly improving the platform and its user-facing API.
 
 
 Full project documentation can be found on [ReadTheDocs](https://psychcore-ngs-pipeline.readthedocs.io/en/latest/).
