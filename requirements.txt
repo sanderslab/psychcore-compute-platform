@@ -78,7 +78,7 @@ urllib3==1.22
 python-daemon==2.1.2
 alabaster==0.7.10
 argh==0.26.2
-Babel==2.5.3
+Babel==2.9.1
 contexttimer==0.3.3
 fasteners==0.14.1
 imagesize==1.0.0
